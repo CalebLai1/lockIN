@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pause - TikTok</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background: black;
+      text-align: center;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -2;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      padding: 0 1rem;
+      z-index: 2;
+    }
+
+    .countdown {
+      font-size: 3rem;
+      font-weight: bold;
+      z-index: 2;
+    }
+
+    .done-message {
+      font-size: 1.5rem;
+      margin-top: 1rem;
+      z-index: 2;
+    }
+
+    .visit-info {
+      margin-top: 1rem;
+      font-size: 1rem;
+      line-height: 1.6;
+      white-space: pre-line;
+      z-index: 2;
+    }
+
+    #float-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .float-msg {
+      position: absolute;
+      font-size: 1.2rem;
+      color: #fff;
+      opacity: 0;
+      animation: floatUp 3s ease-out forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(0);
+        opacity: 0;
+      }
+      20% {
+        opacity: 1;
+      }
+      80% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Do you really need to open TikTok?</h1>
+  <div class="countdown" id="count">10</div>
+  <div class="done-message" id="done" style="display: none;">Now decide wisely.</div>
+  <div class="visit-info" id="visit-info"></div>
+  <div id="float-container"></div>
+  <canvas id="bg"></canvas>
+
+  <script>
+    // Countdown
+    let count = 10;
+    const counter = document.getElementById('count');
+    const done = document.getElementById('done');
+
+    const timer = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(timer);
+        counter.style.display = 'none';
+        done.style.display = 'block';
+      } else {
+        counter.textContent = count;
+      }
+    }, 1000);
+
+    // Liquid background animation
+    const canvas = document.getElementById("bg");
+    const ctx = canvas.getContext("2d");
+
+    let width, height;
+    let points = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      points = [];
+      for (let i = 0; i < 50; i++) {
+        points.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          dx: (Math.random() - 0.5) * 1.5,
+          dy: (Math.random() - 0.5) * 1.5,
+        });
+      }
+    }
+
+    function animate() {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > width) p.dx *= -1;
+        if (p.y < 0 || p.y > height) p.dy *= -1;
+
+        for (let j = i + 1; j < points.length; j++) {
+          const q = points[j];
+          const dx = p.x - q.x;
+          const dy = p.y - q.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist / 100})`;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+    animate();
+
+    // Visit tracking
+    function getTimeKeys() {
+      const now = new Date();
+      const dayKey = now.toISOString().split("T")[0];
+      const weekKey = `${now.getFullYear()}-W${Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + now.getDay() + 1) / 7)}`;
+      const monthKey = now.toISOString().slice(0, 7);
+      const yearKey = now.getFullYear().toString();
+      return { dayKey, weekKey, monthKey, yearKey };
+    }
+
+    function updateVisitTracking(app = "TikTok") {
+      const { dayKey, weekKey, monthKey, yearKey } = getTimeKeys();
+
+      const keys = {
+        day: `${app}-day-${dayKey}`,
+        week: `${app}-week-${weekKey}`,
+        month: `${app}-month-${monthKey}`,
+        year: `${app}-year-${yearKey}`
+      };
+
+      for (const scope in keys) {
+        const key = keys[scope];
+        let count = parseInt(localStorage.getItem(key)) || 0;
+        count++;
+        localStorage.setItem(key, count);
+      }
+
+      const display = `
+You have visited this pause page:
+- Today: ${localStorage.getItem(keys.day)} time(s)
+- This Week: ${localStorage.getItem(keys.week)} time(s)
+- This Month: ${localStorage.getItem(keys.month)} time(s)
+- This Year: ${localStorage.getItem(keys.year)} time(s)
+      `;
+      document.getElementById("visit-info").textContent = display.trim();
+    }
+
+    updateVisitTracking("TikTok");
+
+    // Floating positive messages
+    const floatMessages = [
+      "Take a deep breath.",
+      "You're stronger than the urge.",
+      "This moment matters.",
+      "Be intentional.",
+      "You’re doing great.",
+      "Choose clarity.",
+      "Keep your focus.",
+      "Let the urge pass.",
+      "Your time is valuable.",
+    ];
+
+    function showFloatingMessage() {
+      const msg = document.createElement("div");
+      msg.className = "float-msg";
+      msg.textContent = floatMessages[Math.floor(Math.random() * floatMessages.length)];
+      msg.style.left = `${Math.random() * 80 + 10}%`;
+      msg.style.top = `${Math.random() * 50 + 30}%`;
+      document.getElementById("float-container").appendChild(msg);
+      setTimeout(() => msg.remove(), 3000);
+    }
+
+    setInterval(showFloatingMessage, Math.random() * 2000 + 3000);
+  </script>
+</body>
+</html>
