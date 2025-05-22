@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>Pause - Reddit</title>
+  <title>Pause - Edge</title>
   <style>
     html, body {
       margin: 0;
@@ -48,7 +48,7 @@
 </head>
 <body>
   <div id="content-box">
-    <h1>Do you really need to open Reddit?</h1>
+    <h1>Do you really need to open Edge?</h1>
     <div class="countdown" id="count">10</div>
     <div class="done-message" id="done" style="display: none;">Now decide wisely.</div>
     <div class="visit-info" id="visit-info"></div>
@@ -79,7 +79,7 @@
       return { dayKey, weekKey, monthKey, yearKey };
     }
 
-    function updateVisitTracking(app = "Reddit") {
+    function updateVisitTracking(app = "Edge") {
       const { dayKey, weekKey, monthKey, yearKey } = getTimeKeys();
       const keys = {
         day: `${app}-day-${dayKey}`,
@@ -103,7 +103,7 @@ You have visited this pause page:
       document.getElementById("visit-info").textContent = display.trim();
     }
 
-    updateVisitTracking("Reddit");
+    updateVisitTracking("Edge");
   </script>
 </body>
 </html>
